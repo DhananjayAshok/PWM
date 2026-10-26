@@ -1,0 +1,45 @@
+# Several DreamerV3 sweep runs packed on one B300 (scripts/jobs/sweep_dreamerv3.sh). Restart-safe per run.
+#   bash cluster/sail/launch.sh cluster/sail/sweep_dreamerv3.yaml dv3sw-<robot>-<k> \
+#       --env ROBOT=<robot> --env RUNS="baseline,lr3e-4,lr3e-5,seq128" --env EXPERIMENT_TAG=dv3sw-<robot>-<k> --priority p2
+name: pwm-sweep-dreamerv3
+
+resources:
+  infra: k8s/pantheon
+  accelerators: B300:1
+  cpus: 22
+  memory: 250
+  image_id: docker:nvcr.io/nvidia/pytorch:26.05-py3
+  job_recovery: {max_restarts_on_errors: 3}
+
+workdir: .
+
+volumes:
+  /persist: ${cluster_volume}
+  /checkpoints: checkpoints-sail
+
+envs:
+  PANTHEON_USER: ${cluster_user}
+  ROBOT: ""
+  RUNS: ""
+  DATASET: nominal
+  EXPERIMENT_TAG: ""
+  WANDB_RESUME: allow
+  OMP_NUM_THREADS: "22"
+  PWM_UV_CACHE_DIR: /tmp/pwm_uv_cache
+
+secrets:
+  - secrets:WANDB_API_KEY
+
+setup: |
+  bash cluster/sail/job_setup.sh
+
+run: |
+  bash scripts/jobs/sweep_dreamerv3.sh --robot "$ROBOT" --runs "$RUNS" --dataset "$DATASET" \
+      --ckpt_root "/checkpoints/$PANTHEON_USER"
+  status=$?
+  # Packs have stayed RUNNING for hours after this point (2026-10-26): list what is still alive, kill the env
+  # processes, and print the end marker cluster/sail/reaper.sh cancels on if the job still does not exit.
+  ps -eo pid,ppid,etime,cmd --forest | grep -v -E "ps -eo|grep" | tail -30
+  pkill -9 -f "/tmp/pwm_env[s]/" 2>/dev/null
+  echo "ALL DONE (status $status)"
+  exit $status

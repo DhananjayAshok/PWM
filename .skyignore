@@ -1,0 +1,9 @@
+# What SkyPilot leaves out when it copies the repo into a job (workdir: .). Without this file it would use .gitignore,
+# which drops configs/config.env and the locally filled configs/private_vars.yaml that every job needs.
+.git/
+setup/.venv/
+__pycache__/
+*.pyc
+tmp.sh
+cluster/sail/.rendered_*
+cluster/sail/sail_vars.yaml

@@ -1,0 +1,81 @@
+# Robot registry: for each robot, the environments it runs in (setup/envs/<env>), its policy, the evaluation protocol
+# of the policy's authors, and their published success rates (step 1 checks that we reproduce them in our setup).
+# Rates are fractions. Read by pwm/robots.py.
+robots:
+  franka_libero:
+    sim_env: libero
+    policy_env: libero  # LeRobot runs the policy in-process with the simulator
+    # LeRobot's LIBERO fine-tune in the current processor format. The docs' numbers below are for
+    # lerobot/pi05_libero_finetuned; this variant gave 95-99% per suite in our earlier runs.
+    policy: lerobot/pi05_libero_finetuned_v044
+    policy_revision: 7152f13e34c6c115d808aea0e5d08aca74eac14b
+    protocol:
+      # LeRobot's reproduction: 10 episodes per task on LIBERO's fixed initial states, n_action_steps 10 (as OpenPI),
+      # hard resets, lerobot's per-suite episode lengths
+      n_action_steps: 10
+      episodes_per_task: 10
+    tasks: [libero_spatial, libero_object, libero_goal, libero_10]
+    reference:
+      source: "LeRobot LIBERO docs, 'Reproducing published results' (Pi0.5, 100 episodes per suite)"
+      success: {libero_spatial: 0.97, libero_object: 0.99, libero_goal: 0.98, libero_10: 0.96}
+
+  gr1_robocasa:
+    sim_env: robocasa_gr1
+    policy_env: gr00t_n16
+    policy: nvidia/GR00T-N1.6-3B
+    policy_revision: d0814e7ecb19202e7c8468b46098b0b7ef3a6d61
+    embodiment_tag: GR1
+    protocol:
+      n_action_steps: 8
+      max_steps: 720
+    tasks:
+      - gr1_unified/PosttrainPnPNovelFromPlateToPlateSplitA_GR1ArmsAndWaistFourierHands_Env
+      - gr1_unified/PosttrainPnPNovelFromCuttingboardToPanSplitA_GR1ArmsAndWaistFourierHands_Env
+      - gr1_unified/PosttrainPnPNovelFromTrayToPlateSplitA_GR1ArmsAndWaistFourierHands_Env
+    reference:
+      source: "Isaac-GR00T n1.6-release README, RoboCasa GR-1 tabletop table"
+      success:
+        gr1_unified/PosttrainPnPNovelFromPlateToPlateSplitA_GR1ArmsAndWaistFourierHands_Env: 0.787
+        gr1_unified/PosttrainPnPNovelFromCuttingboardToPanSplitA_GR1ArmsAndWaistFourierHands_Env: 0.685
+        gr1_unified/PosttrainPnPNovelFromTrayToPlateSplitA_GR1ArmsAndWaistFourierHands_Env: 0.710
+
+  widowx_bridge:
+    sim_env: simpler
+    policy_env: gr00t_n17
+    policy: nvidia/GR00T-N1.7-SimplerEnv-Bridge
+    policy_revision: 940134b3c2948ccfdf8e7393f2d2ca869dc42833
+    embodiment_tag: SIMPLER_ENV_WIDOWX
+    protocol:
+      n_action_steps: 4
+      max_steps: 300
+      image_size: [256, 256]
+    tasks: [widowx_spoon_on_towel, widowx_carrot_on_plate, widowx_put_eggplant_in_basket, widowx_stack_cube]
+    reference:
+      source: "Isaac-GR00T README, SimplerEnv Bridge visual matching (100 episodes per task)"
+      success: {widowx_spoon_on_towel: 0.78, widowx_carrot_on_plate: 0.58, widowx_put_eggplant_in_basket: 0.53,
+                widowx_stack_cube: 0.48}
+
+  google_fractal:
+    sim_env: simpler
+    policy_env: gr00t_n17
+    policy: nvidia/GR00T-N1.7-SimplerEnv-Fractal
+    policy_revision: fb8357ff66e3cc8dec369e2bf7dbe9e6740511b2
+    embodiment_tag: SIMPLER_ENV_GOOGLE
+    protocol:
+      n_action_steps: 1
+      max_steps: 300
+      image_size: [256, 320]
+    tasks: [google_robot_pick_coke_can, google_robot_pick_object, google_robot_move_near, google_robot_open_drawer,
+            google_robot_close_drawer, google_robot_place_apple_in_closed_top_drawer]
+    reference:
+      source: "Isaac-GR00T examples/SimplerEnv README, fractal visual matching (100 episodes per task)"
+      success: {google_robot_pick_coke_can: 1.00, google_robot_pick_object: 0.94, google_robot_move_near: 1.00,
+                google_robot_open_drawer: 0.65, google_robot_close_drawer: 0.69,
+                google_robot_place_apple_in_closed_top_drawer: 0.07}
+
+# GR00T N1.7 builds its backbone from nvidia/Cosmos-Reason2-2B, which is gated. The fine-tuned checkpoints contain all
+# backbone weights; only its config and processor files are read, and Qwen/Qwen3-VL-2B-Instruct (ungated, which
+# Cosmos-Reason2-2B was post-trained from) has identical ones. pwm/policies/gr00t_checkpoint.py points the checkpoint
+# at that model instead.
+gr00t_backbone_substitutes:
+  nvidia/Cosmos-Reason2-2B: {repo: Qwen/Qwen3-VL-2B-Instruct, revision: 89644892e4d85e24eaac8bacfd4f463576704203}

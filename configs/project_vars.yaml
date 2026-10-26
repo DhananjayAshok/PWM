@@ -1,0 +1,3 @@
+random_seed: 42
+figure_skip_show: True # Save figures instead of displaying them (no display on cluster nodes)
+WANDB_PROJECT: "PWM" # Used by bash to point the wandb logger at the right project

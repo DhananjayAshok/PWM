@@ -1,0 +1,4 @@
+# name url commit submodules(comma-separated paths, or none)
+# n1.6-release: the sim client uses gr00t's policy client and gym wrappers, and the RoboCasa GR-1 tabletop tasks
+# (submodule @ 4840e67) that GR00T N1.6 was evaluated on.
+Isaac-GR00T https://github.com/NVIDIA/Isaac-GR00T.git ead52833afbbf4243f8cd5e7664f48a94de03b19 external_dependencies/robocasa-gr1-tabletop-tasks

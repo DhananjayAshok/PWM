@@ -1,0 +1,3 @@
+# Copy to cluster/sail/sail_vars.yaml (gitignored) and fill in. Read only by cluster/sail/launch.sh.
+cluster_user: "PLACEHOLDER" # account jobs run as (Sail's PANTHEON_USER)
+cluster_volume: "PLACEHOLDER" # SkyPilot volume mounted at /persist in jobs; storage_dir and results_dir must be on it

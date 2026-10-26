@@ -1,0 +1,49 @@
+# Shift-level screening worker (scripts/jobs/screen_shifts.sh) on one B300. Launch several with different WORKER:
+#   for w in 0 1 2 3; do bash cluster/sail/launch.sh cluster/sail/screen_shifts.yaml pwm-screen-$w \
+#       --env WORKER=$w --env NUM_WORKERS=4; done
+name: pwm-screen-shifts
+
+resources:
+  infra: k8s/pantheon
+  accelerators: B300:1
+  cpus: 22
+  memory: 250
+  image_id: docker:nvcr.io/nvidia/pytorch:26.05-py3
+  job_recovery: {max_restarts_on_errors: 3}  # restart-safe: finished units are kept
+
+workdir: .
+
+volumes:
+  /persist: ${cluster_volume}
+
+envs:
+  PANTHEON_USER: ${cluster_user}
+  WORKER: "0"
+  NUM_WORKERS: "1"
+  SHIFTS: all
+  SELFTEST_ROBOT: none
+  CANDIDATES_KEY: candidates
+  CONFIRM: none
+  OUT: none
+  OMP_NUM_THREADS: "22"
+  NVIDIA_DRIVER_CAPABILITIES: all
+  PWM_UV_CACHE_DIR: /tmp/pwm_uv_cache
+
+config:
+  kubernetes:
+    pod_config:
+      metadata:
+        labels:
+          telemetry-contract: opt-out
+          telemetry-opt-out-reason: sim-policy-eval
+
+setup: |
+  bash cluster/sail/job_setup.sh
+
+run: |
+  bash scripts/jobs/screen_shifts.sh --worker "$WORKER" --num_workers "$NUM_WORKERS" --shifts "$SHIFTS" \
+      --selftest_robot "$SELFTEST_ROBOT" --out "$OUT" --candidates_key "$CANDIDATES_KEY" --confirm "$CONFIRM"
+  status=$?
+  pkill -9 -f "/tmp/pwm_env[s]/" 2>/dev/null  # [s]: the pattern must not match this shell's own command line
+  echo "ALL DONE (status $status)"
+  exit $status

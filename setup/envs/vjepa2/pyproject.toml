@@ -1,0 +1,32 @@
+# V-JEPA 2-AC world model (frozen V-JEPA 2 ViT-g encoder + action-conditioned predictor). The vjepa2 code comes from
+# src/vjepa2 (sources.txt) and is put on PYTHONPATH by env.sh. Dependencies are the subset of its requirements.txt
+# that the model, the DROID trainer utilities and our trainer import; torch from the cu130 index (B300, sm_103).
+[project]
+name = "pwm-env-vjepa2"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch==2.9.0",
+    "torchvision==0.24.0",
+    "timm",
+    "einops",
+    "numpy<2.3",
+    "scipy",
+    "pyyaml",
+    "psutil",
+    "pillow",
+    "opencv-python-headless",
+    "av",
+    "wandb",
+    "click",
+    "tqdm",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

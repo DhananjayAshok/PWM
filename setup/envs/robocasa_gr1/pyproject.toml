@@ -1,0 +1,50 @@
+# RoboCasa GR-1 tabletop simulator client (mirrors Isaac-GR00T's setup_RoboCasaGR1TabletopTasks.sh). robocasa and gr00t
+# come from src/Isaac-GR00T (sources.txt) and are put on PYTHONPATH by env.sh; the policy runs in gr00t_n16.
+[project]
+name = "pwm-env-robocasa-gr1"
+version = "0.1.0"
+requires-python = "==3.10.*"
+dependencies = [
+    # robosuite "v1.5.1" as pip resolves it: the v1.5.1 branch head (the repo also has a v1.5.1 tag on another commit).
+    "robosuite @ git+https://github.com/ARISE-Initiative/robosuite.git@a071383d53568ab798eb315c0e95357911be922d",
+    # robocasa-gr1-tabletop-tasks install_requires
+    "numpy==1.26.4",
+    "numba==0.61.2",
+    "scipy>=1.2.3",
+    "mujoco==3.2.6",
+    "pygame",
+    "Pillow",
+    "opencv-python",
+    "pyyaml",
+    "pynput",
+    "tqdm",
+    "termcolor",
+    "imageio[ffmpeg]",
+    "h5py",
+    "lxml",
+    "hidapi",
+    "tianshou==0.5.1",
+    # gr00t client side (policy client, gym wrappers, video writing)
+    "gymnasium==0.29.1",
+    "pydantic",
+    "av==15.0.0",
+    "pyzmq",
+    "transformers==4.51.3",
+    "msgpack==1.1.0",
+    "msgpack-numpy==0.4.8",
+    # imported by gr00t utilities only; the client runs no network, so CPU wheels suffice
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+    "click",
+    # SAPIEN 2 / robosuite still import pkg_resources, which setuptools 71+ no longer provides by default
+    "setuptools<71",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

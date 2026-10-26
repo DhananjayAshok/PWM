@@ -1,0 +1,23 @@
+# V-JEPA 2-AC sweep runs: each run is a named set of overrides over configs/world_models.yaml (vjepa2), applied with
+#   scripts/jobs/train_vjepa2.sh --run <name>
+# Not part of the parameters system (load_parameters only merges configs/*.yaml).
+#
+# Selection number, fixed for every run: val/loss_ar = L1 (layer-normed V-JEPA features) of a 7-step free-running
+# rollout from the first frame of fixed 8-step windows of the val split (<= 512 windows); val/loss_tf (teacher-forced)
+# reported alongside. Early stopping: 3 evaluations (every 500 steps) without a 0.1% improvement of val/loss_ar.
+# Also reported per run, not used for selection (pwm/wm/vjepa2/rollout_eval.py): 4.8 s free-running rollout L1/L2 on 32
+# fixed val episodes from 1 context frame, and action sensitivity (shuffled-commands error / true-commands error).
+runs:
+  # --- grid, one factor at a time around the baseline ---
+  base: {}                                  # lr 2e-4, release predictor, depth 24, TF + 2-step rollout loss, batch 16
+  lr_1e-4: {lr: 1.0e-4}
+  lr_4e-4: {lr: 4.0e-4}
+  init_fresh: {predictor_init: fresh}       # random predictor (encoder still the release's)
+  loss_tf: {loss_rollout_steps: 0}          # teacher forcing only
+  loss_r4: {loss_rollout_steps: 4}          # TF + 4-step rollout
+  loss_r6: {loss_rollout_steps: 6}          # TF + 6-step rollout (best on DROID in JEPA-WMs, 2512.24497)
+  depth_12: {predictor_depth: 12}           # half depth (the release's first 12 blocks)
+  batch_32: {batch_size: 32}
+# Seeds (cluster/sail/sweep_vjepa2.py): grid runs have seed 0; once a robot's grid is done, its two best grid runs get
+# SEEDS more (<run>-seed<N>). Training tricks (cooldown, mixed context, SOAP, AdEMAMix, stacking) were dropped on
+# 2026-10-26 by the user's decision; see plans/literature_tricks.md.

@@ -1,0 +1,35 @@
+# Build simulator/policy environments (setup/envs/<env>/build.sh) as a CPU job, into storage_dir on the shared volume.
+# Building needs no GPU; this keeps the downloads and unpacking off the small dev box.
+#   bash cluster/sail/launch.sh cluster/sail/build_envs.yaml pwm-build-envs [--env ENVS="simpler gr00t_n17"]
+name: pwm-build-envs
+
+resources:
+  infra: k8s/pantheon
+  cpus: 4
+  memory: 16
+  image_id: docker:nvcr.io/nvidia/pytorch:26.05-py3
+
+workdir: .
+
+volumes:
+  /persist: ${cluster_volume}
+
+envs:
+  PANTHEON_USER: ${cluster_user}
+  ENVS: ""        # space-separated; empty = all of setup/envs/*/
+  FORCE: "false"
+  PWM_UV_CACHE_DIR: /tmp/pwm_uv_cache  # uv has stalled with its cache on /persist
+
+config:
+  kubernetes:
+    pod_config:
+      metadata:
+        labels:
+          telemetry-contract: opt-out
+          telemetry-opt-out-reason: env-build
+
+setup: |
+  bash cluster/sail/job_setup.sh
+
+run: |
+  bash scripts/jobs/build_envs.sh --envs "${ENVS:-all}" --force "$FORCE"

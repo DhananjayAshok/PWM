@@ -1,0 +1,5 @@
+# Machine- and person-specific values. Committed with PLACEHOLDER; fill in locally, never commit real values.
+storage_dir: "PLACEHOLDER" # Absolute path for heavy files: environments, data, models, simulator assets
+results_dir: "PLACEHOLDER" # Absolute path for light files: logs, verification records, figures
+huggingface_repo_namespace: "PLACEHOLDER" # Hub user/org used by sync_data.py for large files
+huggingface_repo_name: "PLACEHOLDER" # Hub repo used by sync_data.py for large files

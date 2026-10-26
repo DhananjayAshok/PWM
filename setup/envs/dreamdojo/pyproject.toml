@@ -1,0 +1,107 @@
+# DreamDojo world model (training and prediction). The DreamDojo code itself comes from src/DreamDojo (sources.txt)
+# and is put on PYTHONPATH by env.sh. Dependencies: cosmos-oss's list and its `cu130_torch29` extra (torch 2.9 + CUDA 13
+# builds of flash-attn / transformer-engine / decord from NVIDIA's cosmos-dependencies index), at the versions of
+# DreamDojo's own uv.lock, plus what PWM's trainer and metrics need. natten and xformers (optional attention backends,
+# not used by the 2B model; natten has no cp312 wheel for cu130) are left out, as in the image-based env that trained
+# DreamDojo for the Franka project.
+[project]
+name = "pwm-env-dreamdojo"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    # cosmos-oss dependencies
+    "albumentations>=2.0.8",
+    "attrs>=25.4.0",
+    "av>=16.0.1",
+    "better-profanity>=0.7.0",
+    "boto3>=1.40.58",
+    "click>=8.3.0",
+    "diffusers==0.35.2",
+    "einops>=0.8.1",
+    "ftfy>=6.3.1",
+    "fvcore>=0.1.5.post20221221",
+    "fastparquet>=2024.11.0",
+    "h11>=0.16.0",
+    "huggingface-hub>=0.36.0",
+    "hydra-core>=1.3.2",
+    "imageio[pyav,ffmpeg]>=2.37.0",
+    "iopath>=0.1.10",
+    "loguru>=0.7.3",
+    "mediapy>=1.2.4",
+    "megatron-core==0.14.0",
+    "ml-dtypes>=0.5.3",
+    "multi-storage-client[boto3,google-cloud-storage,fsspec,observability-otel,msal]==0.38.1",
+    "nltk>=3.9.2",
+    "numpy==2.3.4",  # as DreamDojo's uv.lock
+    "numpydantic>=1.7.0",
+    "nvidia-ml-py>=13.580.82",
+    "omegaconf>=2.3.0",
+    "opencv-python>=4.11.0.86",
+    "pandas>=2.3.3",
+    "pyarrow>=19.0.0",
+    "peft==0.17.1",
+    "pillow>=11.3.0",
+    "protobuf>=6.33.0",
+    "pycocotools>=2.0.10",
+    "pydantic>=2.11.7",
+    "pyyaml>=6.0.3",
+    "qwen-vl-utils[decord]>=0.0.14",
+    "safetensors>=0.6.2",
+    "scikit-image>=0.25.2",
+    "scipy>=1.15.3",
+    "sentencepiece>=0.2.1",
+    "setuptools>=80.9.0",
+    "termcolor>=3.1.0",
+    "tqdm>=4.67.1",
+    "transformers==4.51.3",
+    "typing-extensions>=4.14.1",
+    "tyro>=0.9.35",
+    "wandb>=0.22.2",
+    "webdataset>=1.0.2",
+    # cosmos-oss[cu130_torch29]
+    "decord==0.6.0",
+    "flash-attn==2.7.4.post1",
+    "transformer-engine==2.8.0",
+    "torch==2.9.0",
+    "torchvision==0.24.0",
+    "triton==3.5.0",
+    # cosmos-oss dependencies imported at module level by the model code
+    "ipdb>=0.13.13",
+    "modelscope>=1.31.0",
+    "pyinstrument>=5.1.1",
+    "pytest>=8.4.2",
+    "retinaface-py>=0.0.2",
+    # imported by DreamDojo's code but not declared by cosmos-oss (the set the Franka project's working env had,
+    # found with a static scan of top-level imports)
+    "lightning",
+    "moviepy==2.2.1",
+    "jsonargparse[signatures]>=4.27.7",
+    "gitpython",
+    "pytz",
+    "gdown",
+    "trimesh",
+    "h5py",
+    "dill",
+    "openai",
+    # PWM trainer / metrics
+    "lpips",
+    "piq",
+]
+
+[tool.uv]
+override-dependencies = ["numpy==2.3.4"]
+# Lock only wheels that install here (the cosmos index has some packages for aarch64 only, e.g. its decord build:
+# decord therefore comes from PyPI; DreamDojo uses it only in its own dataset loaders, which PWM does not use).
+required-environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+
+[tool.uv.sources]
+flash-attn = { index = "cosmos-cu130-torch29" }
+transformer-engine = { index = "cosmos-cu130-torch29" }
+torch = { index = "cosmos-cu130-torch29" }
+torchvision = { index = "cosmos-cu130-torch29" }
+triton = { index = "cosmos-cu130-torch29" }
+
+[[tool.uv.index]]
+name = "cosmos-cu130-torch29"
+url = "https://nvidia-cosmos.github.io/cosmos-dependencies/v1.2.0/cu130_torch29/simple"
+explicit = true

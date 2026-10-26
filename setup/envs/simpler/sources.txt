@@ -1,0 +1,5 @@
+# name url commit submodules(comma-separated paths, or none)
+# SimplerEnv as pinned by Isaac-GR00T (squarefk fork @ 8a2d286, which pins ManiSkill2_real2sim youliangtan fork @ c2a9e87).
+# Both the WidowX (Bridge) and Google Robot (fractal) visual-matching tasks live here. Simulator assets (~265 MB) ship in
+# ManiSkill2_real2sim/data.
+Isaac-GR00T https://github.com/NVIDIA/Isaac-GR00T.git 944fe70c4fd54e3fcb80a7d7258a328f9c061176 external_dependencies/SimplerEnv

@@ -1,0 +1,29 @@
+# LIBERO simulator (robosuite 1.4 / MuJoCo) and the LeRobot LIBERO policies (pi0.5, SmolVLA), in one environment:
+# LeRobot runs the policies and the LIBERO env in-process.
+[project]
+name = "pwm-env-libero"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "lerobot[libero,pi,smolvla]==0.6.1",
+    # lerobot[libero] would pull mujoco 3.8, which renders LIBERO visibly differently from the data DreamDojo was
+    # fine-tuned on (34 vs 38.5 dB PSNR on replayed demos): keep 3.2.3.
+    "mujoco==3.2.3",
+    "torch==2.11.0",
+    "torchvision==0.26.0",
+    "sentencepiece",  # pi0.5 tokenizer (built from the public big_vision file, see build.sh)
+    "protobuf",
+    "h5py",
+    "imageio[ffmpeg]",
+    "pyyaml",
+    "click",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchvision = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

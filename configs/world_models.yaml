@@ -1,0 +1,107 @@
+# World-model settings. Read by pwm/wm/<model>/. One top-level key per world model.
+dreamdojo:
+  # Released weights (nvidia/DreamDojo, ungated): the general 2B pretrained model is the start for every robot.
+  # pwm/wm/dreamdojo/assets.py downloads them into HF_HOME and converts them to <model_dir>/dreamdojo/.
+  assets:
+    repo: nvidia/DreamDojo
+    revision: 89d029e10816d2995d700cb8ba06f171e0504203
+    init_checkpoint: 2B_pretrain/iter_000140000
+    experiment: dreamdojo_2b_480_640_pretrain
+    # Wan2.1 VAE: nvidia/Cosmos-Predict2.5-2B (gated) ships the identical file as tokenizer.pth (same sha256)
+    vae_repo: Wan-AI/Wan2.1-T2V-1.3B
+    vae_revision: 37ec512624d61f7aa208f7ea8140a131f93afc9a
+    vae_file: Wan2.1_VAE.pth
+  # Native actions: each robot's commands go into its own slice of the 384-d action vector (DreamDojo's post-training
+  # recipe, docs/POSTTRAIN.md); every other slot, including the latent-action slots [352, 384), is zero.
+  #   packing stack: the s commands of each recorded-frame interval, concatenated (delta-command robots)
+  #   packing net_delta: command at the end of the interval minus command at the end of the previous one
+  #     (absolute joint targets; as NVIDIA's GR-1 data, which subsamples targets at stride 2 and takes deltas)
+  # slot = [start, end), end - start = action width x commands per interval (stack) or action width (net_delta)
+  robots:
+    franka_libero: {slot: [169, 183], packing: stack, commands_per_frame: 2}
+    widowx_bridge: {slot: [183, 190], packing: stack, commands_per_frame: 1}
+    google_fractal: {slot: [190, 197], packing: stack, commands_per_frame: 1}
+    gr1_robocasa: {slot: [0, 29], packing: net_delta, commands_per_frame: 2}
+  clip_frames: 13            # 1 conditioning frame + 12 predicted (one action vector per transition)
+  resolution: [480, 640]     # H, W; recorded frames are resized to this
+  train:
+    # the settings every run trains with (no per-run overrides)
+    lr: 4.0e-5
+    warmup_steps: 300
+    weight_decay: 0.1
+    grad_clip: 1.0
+    ema: 0.999
+    effective_batch: 96       # clips per optimiser step (micro-batch x GPUs x gradient accumulation)
+    max_micro_batch: 12       # clips per GPU per forward (B300 memory)
+    scope: full               # full | lora (LoRA on the DiT blocks + action embedders fully)
+    lora_rank: 64
+    lora_alpha: 64
+    seed: 0                   # training-data order (0 = the original order); validation is fixed regardless
+    save_minutes: 10
+    keep_checkpoints: 2
+    # validation: identical for every run so val losses are comparable
+    val_every_clips: 48000    # training clips between evaluations (independent of batch size / GPU count)
+    val_clips: 192            # fixed clips from the val split, each with a fixed seed (noise + noise level)
+    val_patience: 3           # stop when the val loss has not improved for this many consecutive evaluations
+    max_epochs: 20            # hard cap (clip-epochs of the train split)
+  predict:
+    num_steps: 35             # sampler steps (repo default)
+    guidance: 0
+
+vjepa2:
+  # Meta's released V-JEPA 2-AC (ViT-g encoder, frozen; 24-layer action-conditioned predictor, fine-tuned).
+  checkpoint_url: https://dl.fbaipublicfiles.com/vjepa2/vjepa2-ac-vitg.pt
+  crop_size: 256              # frames resized (squashed) to 256 x 256, as the release
+  frames_per_clip: 8          # model steps per training window (release: 8 frames at 4 fps)
+  loss_rollout_steps: 2       # free-running steps in the training loss on top of teacher forcing (release: 2; 0 = TF only)
+  predictor_init: release     # release: Meta's V-JEPA 2-AC predictor; fresh: random init (encoder is always the release's)
+  predictor_depth: 24         # predictor blocks (release: 24; fewer = its first blocks when predictor_init is release)
+  batch_size: 16              # per GPU
+  num_workers: 10
+  lr: 2.0e-4                  # AdamW, constant after warm-up (release peak: 4.25e-4)
+  warmup_steps: 300
+  weight_decay: 0.04
+  grad_clip: 1.0
+  activation_checkpointing: true
+  eval_every_steps: 500       # validation (fixed protocol, pwm/wm/vjepa2/train.py); stop after `patience` evaluations
+  patience: 3
+  min_rel_improvement: 0.001
+  max_steps: 200000           # safety cap; the validation loss is the stopping rule
+  save_every_minutes: 10
+  keep_checkpoints: 2
+  seed: 0
+  # Model step = frame_stride recorded frames (~5 fps or the robot's control rate if lower); its action = the
+  # control_steps_per_frame * frame_stride commands of that step, stacked.
+  robots:
+    franka_libero: {control_steps_per_frame: 2, frame_stride: 2}   # 10 fps recorded -> 5 fps, 4 commands per step
+    gr1_robocasa: {control_steps_per_frame: 2, frame_stride: 2}
+    widowx_bridge: {control_steps_per_frame: 1, frame_stride: 1}   # 5 fps
+    google_fractal: {control_steps_per_frame: 1, frame_stride: 1}  # 3 fps
+
+dreamerv3:
+  # DreamerV3 world model only (PyTorch port NM512/dreamerv3-torch; pwm/wm/dreamerv3), trained from scratch per robot.
+  # Inputs per recorded frame: the image, downscaled from the recorded frame, and the commands of the transition into
+  # it, stacked (all control steps between two recorded frames). Its reward head is trained on per-step task success.
+  # The settings of every run (sweeps archived 2026-10-26 in archive/sweeps/).
+  size: s100m                # s12m | s25m | s50m | s100m (named by params at 64 px); chosen from the grid on
+                             # 2026-10-26, see plans/sweep_report.md
+  image_size: 64             # square; 64 or 128
+  context_frames: 1          # real frames observed before imagining, as DreamDojo's 1 conditioning frame
+  precision: 16              # mixed precision (fp16 autocast + loss scaling, the port's AMP)
+  model_lr: 1.0e-4
+  overrides: {}              # port config keys, e.g. {kl_free: 0.5, dyn_scale: 0.8, rep_scale: 0.2}
+  batch_size: 32
+  batch_length: 64           # frames per training window
+  loader_workers: 4
+  seed: 0
+  log_every: 50
+  eval_every: 500            # steps between evaluations
+  horizon_s: 4.8             # open-loop window of the selection metric (the eval panel's window)
+  openloop_episodes: 128     # fixed val episodes for the selection metric (val/openloop_mse64)
+  report_episodes: 32        # fixed val episodes for the per-run report (native MSE/LPIPS, action sensitivity)
+  val_windows: 256           # fixed val windows for the base objective and its parts
+  patience: 4                # stop after this many evaluations without improvement of the selection metric
+  min_delta: 0.002           # relative improvement that counts
+  max_steps: 400000          # hard cap
+  save_minutes: 5
+  peak_flops: 2.25e+15       # B300 dense fp16 tensor throughput, for effective MFU

@@ -1,0 +1,4 @@
+# name url commit submodules(comma-separated paths, or none)
+# PyTorch port of DreamerV3 (MIT). Only its world-model parts are used (networks.py, models.WorldModel, tools.py);
+# put on PYTHONPATH by env.sh.
+dreamerv3-torch https://github.com/NM512/dreamerv3-torch.git 6ef8646d807cd10ce0c88e10a7e943211e7fc44c none

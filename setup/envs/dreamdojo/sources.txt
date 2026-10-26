@@ -1,0 +1,4 @@
+# name url commit submodules(comma-separated paths, or none)
+# DreamDojo (Cosmos-Predict2.5 based world model), main @ 2026-02 release. Its packages (cosmos_predict2, cosmos_oss,
+# cosmos_cuda) are put on PYTHONPATH by env.sh; their third-party dependencies are locked in our pyproject.
+DreamDojo https://github.com/NVIDIA/DreamDojo.git 02f119b759d5c7f84a399fdeea3c6e82e7ed6cff none

@@ -1,0 +1,30 @@
+# DreamerV3 world model (PyTorch port NM512/dreamerv3-torch, sources.txt), trained offline on our episodes; no RL envs.
+# Deviations from the port's requirements.txt (torch 2.4.1, gym, dm_control, ...): torch 2.9.0+cu130 for B300 (sm_103);
+# none of the RL environment packages (we train the world model only, from recorded data).
+[project]
+name = "pwm-env-dreamerv3"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch==2.9.0",
+    "torchvision==0.24.0",  # LPIPS backbone
+    "numpy",
+    "tensorboard",       # imported at module level by the port's tools.py
+    "av",                # mp4 decoding of recorded episodes
+    "imageio[ffmpeg]",   # mp4 writing of predictions
+    "pyyaml",
+    "click",
+    "wandb",             # training-v1 telemetry
+    "tqdm",
+    "pandas",
+    "lpips",               # per-run open-loop LPIPS in the sweep tables
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

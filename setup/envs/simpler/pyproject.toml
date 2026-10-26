@@ -1,0 +1,35 @@
+# SimplerEnv simulator (SAPIEN 2) for the WidowX / Bridge and Google Robot / fractal tasks. simpler_env and
+# mani_skill2_real2sim come from src/Isaac-GR00T/external_dependencies/SimplerEnv (sources.txt) and are put on PYTHONPATH
+# by env.sh; the policy runs in gr00t_n17 and is reached over ZMQ, so no torch here.
+# Versions are those of the environment that reproduced GR00T N1.7's published Bridge numbers.
+[project]
+name = "pwm-env-simpler"
+version = "0.1.0"
+requires-python = "==3.10.*"
+dependencies = [
+    # ManiSkill2_real2sim requirements.txt
+    "numpy==1.24.4",
+    "scipy==1.15.3",
+    "gymnasium==0.29.1",
+    "sapien==2.2.2",
+    "h5py",
+    "pyyaml",
+    "tqdm",
+    "GitPython",
+    "tabulate",
+    "gdown>=4.6.0",
+    "transforms3d==0.4.2",
+    # headless build only (the package lists opencv-python; two cv2 builds in one venv shadow each other)
+    "opencv-python-headless==4.10.0.84",
+    "imageio[ffmpeg]==2.38.0",
+    "trimesh==5.1.1",
+    "rtree",
+    "ruckig",
+    # policy client
+    "msgpack==1.1.0",
+    "msgpack-numpy==0.4.8",
+    "pyzmq",
+    "click",
+    # SAPIEN 2 / robosuite still import pkg_resources, which setuptools 71+ no longer provides by default
+    "setuptools<71",
+]

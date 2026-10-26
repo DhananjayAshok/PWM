@@ -1,0 +1,4 @@
+# name url commit submodules(comma-separated paths, or none)
+# main @ 2026-10-22 (GR00T N1.7, the commit whose SimplerEnv Bridge/fractal checkpoints were validated here). The server
+# needs only the gr00t package.
+Isaac-GR00T https://github.com/NVIDIA/Isaac-GR00T.git 944fe70c4fd54e3fcb80a7d7258a328f9c061176 none

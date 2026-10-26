@@ -1,0 +1,16 @@
+# Core environment: orchestration, configs, analysis and plotting. Simulators, policies and world models each have their
+# own environment under setup/envs/<env>/ (see setup/envs/README.md).
+[project]
+name = "pwm"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "click",
+    "huggingface-hub",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "seaborn",
+    "tqdm",
+]

@@ -1,0 +1,63 @@
+# Data generation (pwm/data): per-robot mix, splits and sizes. Decisions (2026-10-24): 5 h of nominal training video
+# per robot (first planned as 30 h; cut to 5 h with the same proportions so compute goes to training ablations); sources = demos (where they exist), the strong policy clean + action noise (5 levels, level 0 = clean),
+# perturbed replays (noise | grip | branch), idle; no weak policy, no off-distribution tasks, no scripted wander/reach.
+# Layout and episode schema: plans/data_format.md.
+data:
+  target_hours: 5             # nominal training video per robot (train + val splits)
+  val_fraction: 0.03          # share of nominal units (by unit-id hash) held out for the validation loss
+  replay_types: [noise, grip, branch]
+  # source budgets, the 30 h proportions scaled to 5 h: idle 1/30, replays 7/30, Franka demos ~8/30, policy the rest
+  idle_hours: 0.17
+  replay_hours: 1.17
+  demo_hours: 1.3             # robots with demos (Franka): at most this many hours of human demos
+  counterfactual_levels: [0, 1, 2, 3, 4]   # noise levels run from one start state in every test group
+  robots:
+    franka_libero:
+      held_out_tasks: [[libero_spatial, 9], [libero_object, 9]]
+      starts: {train: [0, 45], test: [45, 50], calib: [0, 45]}   # LIBERO benchmark initial-state indices [lo, hi)
+      noise_sigmas: [0.0, 0.03, 0.06, 0.1, 0.16]                  # x noise_scale (normalised EE-delta actions); pilot: 0.15+ -> 0% success
+      demos: true                                                 # LIBERO human demos (storage_dir/data/raw/libero)
+      replay_parent: demo                                         # replays perturb the demos
+    gr1_robocasa:
+      tasks:
+        - gr1_unified/PosttrainPnPNovelFromCuttingboardToBasketSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromCuttingboardToCardboardboxSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromCuttingboardToPanSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromCuttingboardToPotSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromCuttingboardToTieredbasketSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlacematToBasketSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlacematToBowlSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlacematToPlateSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlacematToTieredshelfSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlateToBowlSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlateToCardboardboxSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlateToPanSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromPlateToPlateSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromTrayToCardboardboxSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromTrayToPlateSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromTrayToPotSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromTrayToTieredbasketSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromTrayToTieredshelfSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PnPBottleToCabinetClose_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PnPCanToDrawerClose_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PnPCupToDrawerClose_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PnPMilkToMicrowaveClose_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PnPPotatoToMicrowaveClose_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PnPWineToCabinetClose_GR1ArmsAndWaistFourierHands_Env
+      held_out_tasks:
+        - gr1_unified/PosttrainPnPNovelFromPlacematToBowlSplitA_GR1ArmsAndWaistFourierHands_Env
+        - gr1_unified/PosttrainPnPNovelFromTrayToPotSplitA_GR1ArmsAndWaistFourierHands_Env
+      starts: {train: [0, 100000], test: [1000000, 1000004], calib: [2000000, 2100000]}   # reset seeds [lo, hi)
+      noise_sigmas: [0.0, 0.02, 0.05, 0.1, 0.2]                   # rad, x noise_scale (arm joints, waist)
+      demos: false
+      replay_parent: policy
+    widowx_bridge:
+      starts: {train: [0, 100000], test: [1000000, 1000015], calib: [2000000, 2100000]}
+      noise_sigmas: [0.0, 0.25, 0.5, 1.0, 2.0]                    # x noise_scale (typical per-step EE delta); pilot: 1.0+ -> 0%
+      demos: false
+      replay_parent: policy
+    google_fractal:
+      starts: {train: [0, 100000], test: [1000000, 1000010], calib: [2000000, 2100000]}
+      noise_sigmas: [0.0, 1.0, 2.0, 4.0, 8.0]                     # pilot: 2.0 still ~100% on coke can
+      demos: false
+      replay_parent: policy

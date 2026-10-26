@@ -1,0 +1,50 @@
+# GR00T N1.6 policy server (GR-1 / RoboCasa). The gr00t package itself comes from src/Isaac-GR00T (sources.txt) and
+# is put on PYTHONPATH by env.sh.
+# Deviations from the repo's pins, needed on B300 (sm_103):
+#   torch 2.9.0+cu130 instead of 2.7.1+cu128 (native sm_103 kernels); torchcodec 0.8 to match it;
+#   no flash-attn (no wheel for torch 2.9 / CUDA 13): the Eagle backbone is patched to SDPA (patches/Isaac-GR00T);
+#   no deepspeed / tensorrt / onnx (training and deployment only).
+[project]
+name = "pwm-env-gr00t-n16"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch==2.9.0",
+    "torchvision==0.24.0",
+    "torchcodec==0.8.*",
+    "albumentations==1.4.18",
+    "opencv-python-headless>=4.5,<4.13",
+    "av==16.1.0",
+    "diffusers==0.35.1",
+    "dm-tree==0.1.8",
+    "lmdb==1.7.5",
+    "msgpack==1.1.0",
+    "msgpack-numpy==0.4.8",
+    "pandas==2.2.3",
+    "peft==0.17.1",
+    "termcolor==3.2.0",
+    "transformers==4.51.3",
+    "tyro==0.9.17",
+    "click==8.1.8",
+    "datasets==3.6.0",
+    "cryptography==42.0.8",
+    "einops==0.8.1",
+    "gitpython==3.1.46",
+    "gymnasium==1.2.2",
+    "matplotlib==3.10.1",
+    "numpy==1.26.4",
+    "omegaconf==2.3.0",
+    "scipy==1.15.3",
+    "wandb==0.23.0",
+    "pyzmq==27.0.1",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+torchcodec = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

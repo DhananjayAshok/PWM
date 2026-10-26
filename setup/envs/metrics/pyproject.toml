@@ -1,0 +1,31 @@
+# Evaluation panel (pwm/eval): pixel metrics, state probes, counterfactual ranking, tables. Reads predictions written by
+# the world models (plans/predictions_format.md); needs no world-model code.
+[project]
+name = "pwm-env-metrics"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch==2.9.0",
+    "torchvision==0.24.0",
+    "lpips==0.1.4",
+    "piq==0.8.0",
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "imageio[ffmpeg]",
+    "opencv-python-headless",
+    "pyyaml",
+    "click",
+    "tqdm",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

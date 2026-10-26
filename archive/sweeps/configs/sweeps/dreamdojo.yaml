@@ -1,0 +1,34 @@
+# DreamDojo fine-tuning sweep ("how to make the best world model by validation loss"). Every run is a name plus
+# overrides of configs/world_models.yaml dreamdojo.train; nothing else differs between runs. The validation objective is
+# identical for all runs: the same fixed val clips (val split, val_clips), the same per-clip seeds (fixed noise and
+# noise level), EMA weights, evaluated every val_every_clips training clips; a run stops after val_patience evaluations
+# without improvement.
+#   bash scripts/jobs/train_dreamdojo.sh --robot franka_libero --sweep_run <name>
+# Results: python -m pwm.wm.dreamdojo.sweep_report --robot <robot>  ->  <results_dir>/sweeps/dreamdojo/<robot>.md
+#
+# Overridable keys: lr, effective_batch (clips per optimiser step, any GPU count: micro-batch x GPUs x accumulation),
+# scope (full | lora), lora_rank, lora_alpha, warmup_steps, weight_decay, ema, grad_clip, seed (training-data order).
+dataset: nominal
+# Stages run by cluster/sail/sweep_dreamdojo.sh (pwm/wm/dreamdojo/sweep_plan.py): the grid on main_robot; once it has
+# finished, seed replicates of the two best grid points (appended to `runs` below automatically) on main_robot and the
+# best grid point on confirm_robots.
+groups:
+  main_robot: franka_libero
+  confirm_robots: [widowx_bridge, google_fractal, gr1_robocasa]
+  grid: [lr4e-5_b96_full, lr1e-5_b96_full, lr1e-4_b96_full, lr4e-5_b32_full, lr1e-5_b32_full, lr1e-4_b32_full,
+         lr4e-5_b96_lora, lr1e-5_b96_lora, lr1e-4_b96_lora, lr4e-5_b32_lora, lr1e-5_b32_lora, lr1e-4_b32_lora]
+runs:
+  # --- stage 1: grid on franka_libero (lr x effective batch x scope); baseline = lr 4e-5, batch 96, full
+  lr4e-5_b96_full: {lr: 4.0e-5, effective_batch: 96, scope: full}
+  lr1e-5_b96_full: {lr: 1.0e-5, effective_batch: 96, scope: full}
+  lr1e-4_b96_full: {lr: 1.0e-4, effective_batch: 96, scope: full}
+  lr4e-5_b32_full: {lr: 4.0e-5, effective_batch: 32, scope: full}
+  lr1e-5_b32_full: {lr: 1.0e-5, effective_batch: 32, scope: full}
+  lr1e-4_b32_full: {lr: 1.0e-4, effective_batch: 32, scope: full}
+  lr4e-5_b96_lora: {lr: 4.0e-5, effective_batch: 96, scope: lora, lora_rank: 64, lora_alpha: 64}
+  lr1e-5_b96_lora: {lr: 1.0e-5, effective_batch: 96, scope: lora, lora_rank: 64, lora_alpha: 64}
+  lr1e-4_b96_lora: {lr: 1.0e-4, effective_batch: 96, scope: lora, lora_rank: 64, lora_alpha: 64}
+  lr4e-5_b32_lora: {lr: 4.0e-5, effective_batch: 32, scope: lora, lora_rank: 64, lora_alpha: 64}
+  lr1e-5_b32_lora: {lr: 1.0e-5, effective_batch: 32, scope: lora, lora_rank: 64, lora_alpha: 64}
+  lr1e-4_b32_lora: {lr: 1.0e-4, effective_batch: 32, scope: lora, lora_rank: 64, lora_alpha: 64}
+  # --- stage 2 (appended by sweep_plan when the grid is done): <point>-seed1/-seed2 of the two best grid points

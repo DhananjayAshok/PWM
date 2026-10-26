@@ -1,0 +1,3 @@
+# name url commit submodules(comma-separated paths, or none)
+# main @ 2026-03-23 (V-JEPA 2, 2-AC, 2.1). Not pip-installed: its src/ and app/ packages go on PYTHONPATH (env.sh).
+vjepa2 https://github.com/facebookresearch/vjepa2.git 204698b45b3712590f06245fbfba32d3be539812 none

@@ -1,0 +1,63 @@
+# Build the dreamdojo environment if needed, then download and convert DreamDojo's released weights
+# (scripts/jobs/prepare_dreamdojo.sh), as a CPU job.
+#   bash cluster/sail/launch.sh cluster/sail/prepare_dreamdojo.yaml pwm-prepare-dreamdojo
+name: pwm-prepare-dreamdojo
+
+resources:
+  infra: k8s/pantheon
+  cpus: 8
+  memory: 96
+  image_id: docker:nvcr.io/nvidia/pytorch:26.05-py3
+
+workdir: .
+
+volumes:
+  /persist: ${cluster_volume}
+
+envs:
+  PANTHEON_USER: ${cluster_user}
+  OMP_NUM_THREADS: "8"
+  PWM_UV_CACHE_DIR: /tmp/pwm_uv_cache
+
+config:
+  kubernetes:
+    pod_config:
+      metadata:
+        labels:
+          telemetry-contract: opt-out
+          telemetry-opt-out-reason: data-prep
+
+setup: |
+  bash cluster/sail/job_setup.sh
+
+run: |
+  # the environment first (skipped when already built from the current definition)
+  bash scripts/jobs/build_envs.sh --envs dreamdojo || exit 1
+  bash scripts/jobs/prepare_dreamdojo.sh
+  # import check of the whole model-loading chain (no GPU: CUDA-only extensions may fail, everything else must not)
+  source scripts/utils.sh
+  ( use_env dreamdojo
+    python - <<'PY'
+  import traceback
+  from pwm.utils import load_parameters
+  from pwm.wm.dreamdojo import runtime
+  runtime.setup(load_parameters())
+  for m in ["cosmos_predict2._src.predict2.utils.model_loader",
+            "cosmos_predict2._src.predict2.models.video2world_model_rectified_flow",
+            "cosmos_predict2._src.predict2.action.models.action_conditioned_video2world_rectified_flow_model",
+            "cosmos_predict2._src.predict2.action.networks.action_conditioned_minimal_v1_lvg_dit"]:
+      try:
+          __import__(m); print("IMPORT OK", m, flush=True)
+      except Exception as e:
+          print("IMPORT FAIL", m, repr(e)[:300], flush=True)
+  try:
+      from cosmos_predict2._src.imaginaire.lazy_config import LazyConfig  # noqa
+      from cosmos_predict2._src.imaginaire.utils.config_helper import get_config_module, override
+      import importlib
+      cfg = importlib.import_module(get_config_module(runtime.ACTION_CONFIG)).make_config()
+      cfg = override(cfg, ["--", "experiment=" + load_parameters()["dreamdojo"]["assets"]["experiment"], "~data_train"])
+      print("CONFIG OK", type(cfg).__name__, flush=True)
+  except Exception:
+      print("CONFIG FAIL", traceback.format_exc()[-1500:], flush=True)
+  PY
+  )

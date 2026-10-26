@@ -1,0 +1,45 @@
+# DreamDojo predictions or real-frame features (scripts/jobs/eval_dreamdojo.sh), one process per GPU.
+#   bash cluster/sail/launch.sh cluster/sail/eval_dreamdojo.yaml dd-eval-<robot>-<dataset> --env ROBOT=<robot> \
+#       --env EXTRA_ARGS="--run_dir /checkpoints/<user>/dd-<robot>-nominal --dataset <dataset> --split test"
+#   features: --env EXTRA_ARGS="--mode encode --split train --max_episodes 2000"   [--gpus B300:N --cpus .. --memory ..]
+name: pwm-eval-dreamdojo
+
+resources:
+  infra: k8s/pantheon
+  accelerators: B300:1
+  cpus: 22
+  memory: 250
+  image_id: docker:nvcr.io/nvidia/pytorch:26.05-py3
+  job_recovery: {max_restarts_on_errors: 3}
+
+workdir: .
+
+volumes:
+  /persist: ${cluster_volume}
+  /checkpoints: checkpoints-sail
+
+envs:
+  PANTHEON_USER: ${cluster_user}
+  ROBOT: ""
+  EXTRA_ARGS: ""
+  OMP_NUM_THREADS: "22"
+  PWM_UV_CACHE_DIR: /tmp/pwm_uv_cache
+
+config:
+  kubernetes:
+    pod_config:
+      metadata:
+        labels:
+          telemetry-contract: opt-out
+          telemetry-opt-out-reason: world-model-eval
+
+setup: |
+  bash cluster/sail/job_setup.sh
+
+run: |
+  bash scripts/jobs/eval_dreamdojo.sh --robot "$ROBOT" $EXTRA_ARGS
+  status=$?
+  # leftover workers (pattern escaped so it never matches this script's own text)
+  pkill -9 -f "pwm\.wm\.dreamdojo\.(train|predict)" 2>/dev/null
+  echo "ALL DONE (status $status)"
+  exit $status

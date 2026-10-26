@@ -1,0 +1,47 @@
+# Data generation on one B300 (scripts/jobs/generate.sh). Restart-safe; launch several on the same dataset to go faster.
+#   bash cluster/sail/launch.sh cluster/sail/generate.yaml pwm-gen-<robot>-<i> --env ROBOT=<robot> [--env KIND=test]
+#       [--env SHIFT=<name> --env LEVEL=<1-5>] [--env WORKERS=8]
+name: pwm-generate
+
+resources:
+  infra: k8s/pantheon
+  accelerators: B300:1
+  cpus: 22
+  memory: 250
+  image_id: docker:nvcr.io/nvidia/pytorch:26.05-py3
+  job_recovery: {max_restarts_on_errors: 3}
+
+workdir: .
+
+volumes:
+  /persist: ${cluster_volume}
+
+envs:
+  PANTHEON_USER: ${cluster_user}
+  ROBOT: ""
+  KIND: nominal
+  SHIFT: none
+  LEVEL: none
+  WORKERS: "8"
+  EXTRA_ARGS: ""
+  OMP_NUM_THREADS: "2"
+  NVIDIA_DRIVER_CAPABILITIES: all
+  PWM_UV_CACHE_DIR: /tmp/pwm_uv_cache
+
+config:
+  kubernetes:
+    pod_config:
+      metadata:
+        labels:
+          telemetry-contract: opt-out
+          telemetry-opt-out-reason: sim-data-generation
+
+setup: |
+  bash cluster/sail/job_setup.sh
+
+run: |
+  bash scripts/jobs/generate.sh --robot "$ROBOT" --kind "$KIND" --shift "$SHIFT" --level "$LEVEL" --workers "$WORKERS" $EXTRA_ARGS
+  status=$?
+  echo "ALL DONE (status $status)"   # end marker for cluster/sail/reaper.sh
+  pkill -9 -f "/tmp/pwm_env[s]/" 2>/dev/null
+  exit $status
